@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex align-items-center fullscreen">
-    <b-container fluid="md">
+    <b-container v-if="$store.state.tournament && $store.state.tournament.statistics" fluid="md">
       <b-row v-if="$store.state.tournament.statistics.player.top">
         <b-col class="py-2">
           <b-card class="shadow mx-auto" no-body style="width:fit-content">

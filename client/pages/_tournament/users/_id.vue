@@ -39,7 +39,7 @@
           </b-card-footer>
         </b-card>
         <b-card v-else class="shadow border-0">
-          <b-card-title>user is not in the tournament</b-card-title>
+          <b-card-title>user has not joined the tournament</b-card-title>
           <b-link :to="{name: 'tournament'}">
             return to index
           </b-link>

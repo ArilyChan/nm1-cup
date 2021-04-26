@@ -12,7 +12,7 @@ router.get('/:tournament/players', async (req, res, next) => {
   res.json(await tournament.getPlayers(req.params.tournament))
 })
 router.get('/:tournament/player/:id', async (req, res, next) => {
-  res.json(await tournament.getPlayer(req.params.id))
+  res.json(await tournament.getPlayer(req.params.tournament, req.params.id))
 })
 router.get('/:tournament', async (req, res, next) => {
   if (!req.params.tournament) { throw new Error('tournament is required') }
@@ -31,6 +31,11 @@ router.post('/:tournament/game', bodyParser.json(), async (req, res, next) => {
   if (!req.params.tournament) { throw new Error('tournament is required') }
   res.json(await tournament.updateGame(req.params.tournament, req.body))
 })
+router.get('/:tournament/submit/:matchId', bodyParser.json(), async (req, res, next) => {
+  if (!req.params.tournament) { throw new Error('tournament is required') }
+  if (!req.params.matchId) { throw new Error('Numeric Match Id is required') }
+  res.json(await tournament.submitMpResult(req.params.tournament, req.params.matchId))
+})
 // router.post('/:tournament/statistics', bodyParser.json(), async (req, res, next) => {
 //   if (!req.params.tournament) { throw new Error('tournament is required') }
 //   res.json(await tournament.updateStatistics(req.params.tournament, req.body))
@@ -42,6 +47,13 @@ router.get('/:tournament/update', bodyParser.json(), async (req, res, next) => {
 router.get('/:tournament/players/reset', bodyParser.json(), async (req, res, next) => {
   if (!req.params.tournament) { throw new Error('tournament is required') }
   res.json(await tournament.resetPlayersMark(req.params.tournament))
+})
+
+router.use((err, req, res, next) => {
+  return res.json({
+    status: false,
+    error: { message: err.message, stack: err.stack }
+  })
 })
 
 module.exports = router
