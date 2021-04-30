@@ -36,6 +36,20 @@ router.get('/:tournament/submit/:matchId', bodyParser.json(), async (req, res, n
   if (!req.params.matchId) { throw new Error('Numeric Match Id is required') }
   res.json(await tournament.submitMpResult(req.params.tournament, req.params.matchId))
 })
+router.get('/:tournament/pool', bodyParser.json(), async (req, res, next) => {
+  if (!req.params.tournament) { throw new Error('tournament is required') }
+  res.json(await tournament.getPool(req.params.tournament))
+})
+router.get('/:tournament/pool/add/:beatmapId', bodyParser.json(), async (req, res, next) => {
+  if (!req.params.tournament) { throw new Error('tournament is required') }
+  if (!req.params.beatmapId) { throw new Error('beatmap id is required') }
+  res.json(await tournament.poolAddMap(req.params.tournament, req.params.beatmapId))
+})
+router.get('/:tournament/pool/delete/:beatmapId', bodyParser.json(), async (req, res, next) => {
+  if (!req.params.tournament) { throw new Error('tournament is required') }
+  if (!req.params.beatmapId) { throw new Error('beatmap id is required') }
+  res.json(await tournament.poolDeleteMap(req.params.tournament, req.params.beatmapId))
+})
 // router.post('/:tournament/statistics', bodyParser.json(), async (req, res, next) => {
 //   if (!req.params.tournament) { throw new Error('tournament is required') }
 //   res.json(await tournament.updateStatistics(req.params.tournament, req.body))

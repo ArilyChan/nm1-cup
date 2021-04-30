@@ -35,9 +35,9 @@
         </b-col>
       </b-row>
       <b-row>
-        <b-col sm class="py-2">
+        <b-col v-if="$store.state.tournament['battle-royale']" sm class="py-2">
           <h3 class="text-center">
-            current elo margin: {{ $store.state.tournament.statistics.current.eloMargin }}
+            current elo margin: {{ $store.state.tournament['battle-royale'].current.eloMargin }}
           </h3>
         </b-col>
         <b-col class="py-2">

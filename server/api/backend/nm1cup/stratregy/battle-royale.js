@@ -24,13 +24,14 @@ const requiredOptions = {
     }
   }
 }
-const mappool = [1840640]
+// const mappool = [1840640]
+
 function validateResult (ok, reason) {
   if (ok) { return { status: ok, reason } }
 }
-function gameFilter (game) {
-  return game.mode === 'osu' &&
-  mappool.includes(game.beatmap.id)
+function gameFilter (maps) {
+  return game => game.mode === 'osu' &&
+  (maps.includes(game.beatmap.id) || maps.includes(parseInt(game.beatmap.id)))
 }
 module.exports = {
 
@@ -42,26 +43,31 @@ module.exports = {
 
   async onSubmit ({ mp, game, manager }) {
     const { games, players } = utils.playersInMatch(mp)
-    const valid = games.filter(gameFilter)
+
+    const maps = await manager.getPool(game.slug)
+    const valid = games.filter(gameFilter(maps.map(({ id }) => id)))
     const playersInGame = await manager.getPlayers(game.slug, {
-      _id: {
+      id: {
         $in: players.map(p => p.id)
       }
     })
     const form = new FormData()
-    // form.append('elo', JSON.stringify({
-    //   elos: playersInGame.map(player => ({
-    //     uid: player.id,
-    //     elo: player.elo
-    //   }))
-    // }))
-    form.append('elo', JSON.stringify({
-      elos: players.map(player => ({
+    const submitPlayers = {
+      elos: playersInGame.map(player => ({
         uid: player.id,
         elo: player.elo || 1000
       }))
-    }))
-    mp.events = mp.events.filter(event => event.game && valid.includes(event.game))
+    }
+    form.append('elo', JSON.stringify(submitPlayers))
+    const copy = {
+      ...mp
+    }
+    mp.events = [...mp.events.filter(event => event.game && valid.includes(event.game))]
+    console.log({
+      players,
+      submitPlayers,
+      mp
+    })
     form.append('matchentity', JSON.stringify(mp))
     const request = await axios({
       method: 'post',
@@ -73,7 +79,70 @@ module.exports = {
     })
       .then(res => res.data)
       .catch(err => err)
-    return request
+    return await module.exports.processResponse({ mp: copy, result: request, manager, before: submitPlayers, game })
+  },
+
+  async processResponse ({ mp, result, manager, before, game }) {
+    if (result?.message !== 'Success') {
+      return {
+        origin: result,
+        status: false
+      }
+    }
+    result.elos.forEach((res) => {
+      const b = before.elos.find(u => u.uid === res.key)
+      res.delta = res.value - b.elo
+    })
+    const collection = manager.collections.matches
+    const done = await collection.findOne({
+      'match.match.id': mp.id,
+      tournament: game.slug,
+      calculated: true
+    })
+    if (done) {
+      return {
+        statue: false,
+        reason: 'submitted match'
+      }
+    }
+    const session = manager.client.startSession()
+    session.startTransaction()
+    try {
+      const insertResult = await collection.insertOne({
+        match: mp,
+        tournament: game.slug,
+        result,
+        calculated: true
+      })
+      if (!insertResult.insertedId) {
+        await session.abortTransaction()
+        return
+      }
+
+      await Promise.all(result.elos.map(({ key, value, delta }) => {
+        return manager.collections.players.findOneAndUpdate({
+          tournament: game.slug,
+          id: key
+        }, {
+          $inc: {
+            elo: delta
+          }
+        })
+      }))
+      await session.commitTransaction()
+      await session.endSession()
+      return {
+        status: true,
+        result
+      }
+    } catch (error) {
+      console.log(error)
+      await session.abortTransaction()
+      return {
+        statue: false,
+        reason: 'error when inserting match result to database'
+      }
+    }
   },
 
   validateOptions (options) {

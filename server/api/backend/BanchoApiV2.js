@@ -169,6 +169,14 @@ class BanchoApi {
     })
   }
 
+  getBeatmap ({ id: beatmapId }, { params, headers } = {}) {
+    const options = {
+      params,
+      headers: headers || this.publicTokenHeader()
+    }
+    return axios.get(`https://osu.ppy.sh/api/v2/beatmaps/${beatmapId}`, options).then(res => res.data)
+  }
+
   getBeatmapScores ({ id: beatmapId }, { params, headers } = {}) {
     const options = {
       params,

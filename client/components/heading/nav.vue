@@ -1,11 +1,21 @@
 <template>
-  <b-navbar toggleable="lg" type="dark" variant="info">
-    <b-navbar-brand v-if="$store.state.tournament.slug" :to="{name:'tournament', params: {tournament: $store.state.tournament.slug}}">
-      {{ $store.state.tournament.name }}
+  <b-navbar toggleable="lg" variant="primary" type="dark">
+    <b-navbar-brand :to="{name:'index'}">
+      osu tournament
     </b-navbar-brand>
-    <b-navbar-brand v-else :to="{name:'index'}">
-      battle royale tournament
-    </b-navbar-brand>
+    <b-navbar-nav>
+      <b-nav-item-dropdown v-if="$store.state.tournament.slug">
+        <template #button-content>
+          {{ $store.state.tournament.name }}
+        </template>
+        <b-dropdown-item :to="{name:'tournament', params: {tournament: $store.state.tournament.slug}}">
+          index
+        </b-dropdown-item>
+        <b-dropdown-item :to="{name:'tournament-pool', params: {tournament: $store.state.tournament.slug}}">
+          pool
+        </b-dropdown-item>
+      </b-nav-item-dropdown>
+    </b-navbar-nav>
     <b-navbar-nav class="ml-auto">
       <b-nav-item-dropdown v-if="$store.state.auth.user" right>
         <!-- Using 'button-content' slot -->
