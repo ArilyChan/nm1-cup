@@ -189,12 +189,13 @@ module.exports = class nm1Cup {
     try {
       const game = await this.getGame(tournament)
       const stratregy = game.stratregy && require(`./stratregy/${game.stratregy}`)
-      const mp = await PublicController.getMatchInfo(mpid)
+      const mp = await PublicController.getMatchInfo(mpid).catch(_ => _)
       if (!mp || !mp?.events) {
-        return {
-          status: false,
-          reason: 'error when fetching mp info'
-        }
+        // return {
+        //   status: false,
+        //   reason: 'error when fetching mp info'
+        // }
+        throw new Error('error on fetching match info')
       }
       const result = await stratregy.onSubmit({ mp, game, manager: this })
       return result
