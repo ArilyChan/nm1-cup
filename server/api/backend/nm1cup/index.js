@@ -1,8 +1,19 @@
 const MongoClient = require('mongodb').MongoClient
+const ObjectId = require('mongodb').ObjectId
 const bancho = require('../BanchoApiV2')
 const PublicController = require('../../controller/PublicController')
 
 const slimPlayerFields = ['id', 'username', 'avatar_url', 'elo', 'eliminated', 'statistics', 'conver_url', 'last_visit', 'join_date', 'is_active']
+
+// const unsetFields = (old, newValue) => {
+//   const $unset = {}
+//   Object.keys(newValue).forEach((k) => {
+//     if (k === '_id') { return }
+//     if (!old[k]) { $unset[k] = 1 }
+//   })
+//   delete old._id
+//   return $unset
+// }
 module.exports = class nm1Cup {
   constructor () {
     this.ready = false
@@ -217,7 +228,7 @@ module.exports = class nm1Cup {
   async poolAddMap (tournament, beatmapId) {
     const game = await this.getGame(tournament)
     if (!game) { throw new Error('game non-exists') }
-    const beatmap = await bancho.getBeatmap({ id: beatmapId })
+    const beatmap = await bancho.getBeatmap({ id: beatmapId }).catch(_ => undefined)
     if (!beatmap) { throw new Error('beatmap id invalid') }
     const res = await this.collections.poolMaps.updateOne(
       {
@@ -236,5 +247,13 @@ module.exports = class nm1Cup {
       status: (res.upsertedCount && true) || false,
       response: res
     }
+  }
+
+  async poolEditMap (_id, upsert) {
+    _id = ObjectId(_id)
+    // const beatmap = await this.collections.poolMaps.findOne({ _id })
+    delete upsert._id
+    const res = await this.collections.poolMaps.findOneAndReplace({ _id }, upsert)
+    return res
   }
 }
